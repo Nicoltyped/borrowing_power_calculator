@@ -15,7 +15,8 @@ const INTEREST_RATE = 7.0; // 7.0% baseline interest rate
 const ASSESSMENT_RATE_BUFFER = 3.0; // 3.0% buffer added to interest rates
 
 // Legacy placeholder functions to replace with API calls
-async function getTax(income) {
+class BorrowingCalculator {
+    async getTax(income) {
     const response = await fetch( `http://localhost:3000/api/tax?income=${income}` , {
         headers: {
             "Authorization": "Bearer pat_abcdefghijklmnopqrstuvwxyz0123456789"
@@ -25,7 +26,7 @@ async function getTax(income) {
     return data.tax;
 }
 
-async function getHEM(income, dependents) {
+    async getHEM(income, dependents) {
     const response = await fetch(`http://localhost:3000/api/hem?income=${income}&dependents=${dependents}`, {
         headers: {
             "Authorization": "Bearer pat_abcdefghijklmnopqrstuvwxyz0123456789"
@@ -38,13 +39,13 @@ async function getHEM(income, dependents) {
 /**
  * Calculates the total borrowing power amount and the monthly repayment configuration
  */
-async function calculateBorrowingPower(income, dependents, expenses, creditLimits, annualAssessmentRate) {
+    async calculateBorrowingPower(income, dependents, expenses, creditLimits, annualAssessmentRate) {
     // 1. Calculate Net Monthly Income after tax deductions
-    const annualTax = await getTax(income);
+    const annualTax = await this.getTax(income);
     const netMonthlyIncome = (income - annualTax) / 12;
 
     // 2. Determine living expenses (User declared expenses vs HEM baseline, whichever is higher)
-    const baselineHEM = await getHEM(income, dependents);
+    const baselineHEM = await this.getHEM(income, dependents);
     const totalLivingExpenses = Math.max(expenses, baselineHEM);
 
     // 3. Calculate credit card liability (~3% of total limits)
@@ -70,9 +71,11 @@ async function calculateBorrowingPower(income, dependents, expenses, creditLimit
         monthlyRepayment: Number(maxMonthlyRepayment.toFixed(2))
     };
 }
+}
 
 function runConsoleMode() {
     const readline = require('readline');
+    const calculator = new BorrowingCalculator();
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
     console.log("Mortgage Borrowing Power Calculator");
@@ -86,7 +89,7 @@ function runConsoleMode() {
                     // Banks assess loans using base rate + buffer for safety
                     const assessmentRate = INTEREST_RATE + ASSESSMENT_RATE_BUFFER;
 
-                    const result = await calculateBorrowingPower(
+                    const result = await calculator.calculateBorrowingPower(
                         parseFloat(income),
                         parseInt(dependents),
                         parseFloat(expenses),
@@ -109,4 +112,4 @@ if (require.main === module) {
     runConsoleMode();
 }
 
-module.exports = { calculateBorrowingPower };
+module.exports = { BorrowingCalculator };
