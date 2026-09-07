@@ -21,5 +21,20 @@ describe('Term Deposit Calculator Tests', () => {
     assert.strictEqual(result.monthlyRepayment, 0);
   });
 
-});
+  it('should return the correct tax for a given income', async () => {
+    const tax = await calculator.getTax(120000);
+    assert.strictEqual(tax, 24000);
+  });
+
+  it('should return the correct HEM for a given income and dependents', async () => {
+    const hem = await calculator.getHEM(120000, 2);
+    assert.strictEqual(hem, 3100);
+  });
+
+  it('should calculate borrowing power with zero dependents', async () => {
+    const result = await calculator.calculateBorrowingPower(100000, 0, 2500, 5000, 7.5);
+    assert.ok(result.maxLoanAmount > 0, 'Should yield a positive borrowing power amount');
+    assert.strictEqual(result.monthlyRepayment, 4266.67);
+  });
+  });
 
